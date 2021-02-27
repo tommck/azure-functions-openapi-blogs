@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Bmazon.Models;
 using Bmazon.Services;
 
-namespace Bmazon
+namespace Bmazon.Functions
 {
   public class OrderShippingStatus
   {

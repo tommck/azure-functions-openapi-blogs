@@ -7,7 +7,7 @@ using System.Net.Http;
 using Bmazon.Models;
 using Bmazon.Services;
 
-namespace Bmazon
+namespace Bmazon.Functions
 {
   public class OrderShipped
   {

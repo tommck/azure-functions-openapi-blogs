@@ -7,7 +7,7 @@ using Bmazon.Models;
 using System.Net.Http;
 using Bmazon.Services;
 
-namespace Bmazon
+namespace Bmazon.Functions
 {
   public class CreateOrder
   {
