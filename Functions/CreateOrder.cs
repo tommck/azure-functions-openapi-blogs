@@ -26,7 +26,7 @@ namespace Bmazon.Functions
     /// </summary>
     /// <param name="req">the HTTP request</param>
     /// <param name="log">the logger</param>
-    /// <returns>a success messge or a collection of error messages</returns>
+    /// <returns>a success message or a collection of error messages</returns>
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
     [FunctionName("CreateOrder")]
