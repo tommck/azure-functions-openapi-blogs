@@ -134,4 +134,5 @@ opts.ConfigureSwaggerGen = genOpts =>
 Now, when you run the functions, you will have the option to have separate API specs for each Client so that they will only know about the APIs they can call and this can be locked down by Azure API Management at a later time.
 
 ![Shopping API](images/ShoppingAPI.png)
+
 ![Warehouse API](images/WarehouseAPI.png)
