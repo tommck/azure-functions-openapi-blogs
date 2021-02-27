@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Bmazon.Models;
 using System.Net.Http;
 using Bmazon.Services;
+using AzureFunctions.Extensions.Swashbuckle.Attribute;
 
 namespace Bmazon.Functions
 {
@@ -20,7 +21,9 @@ namespace Bmazon.Functions
 
     [FunctionName("CreateOrder")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "order")] HttpRequestMessage req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "order")]
+        [RequestBodyType(typeof(Order), "The Order To Create")]
+        HttpRequestMessage req,
         ILogger log)
     {
       var order = await req.Content.ReadAsAsync<Order>();
