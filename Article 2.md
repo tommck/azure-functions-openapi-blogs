@@ -122,7 +122,7 @@ public class OrderLineItem
   public int Quantity { get; set; }
 
   [Required, NotNull, MinLength(1)]
-  public string SKU { get; set; } // Changed this to a string because it made more sense
+  public string SKU { get; set; }
 }
 ```
 
