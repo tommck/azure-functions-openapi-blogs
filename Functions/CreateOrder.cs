@@ -7,6 +7,8 @@ using Bmazon.Models;
 using System.Net.Http;
 using Bmazon.Services;
 using AzureFunctions.Extensions.Swashbuckle.Attribute;
+using System.Net;
+using System.Collections.Generic;
 
 namespace Bmazon.Functions
 {
@@ -19,6 +21,14 @@ namespace Bmazon.Functions
       this.orderService = orderService;
     }
 
+    /// <summary>
+    /// Creates an Order that will be shipped to the Warehouse for fulfillment.
+    /// </summary>
+    /// <param name="req">the HTTP request</param>
+    /// <param name="log">the logger</param>
+    /// <returns>nothing</returns>
+    [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+    [ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
     [FunctionName("CreateOrder")]
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "order")]
@@ -32,7 +42,7 @@ namespace Bmazon.Functions
 
       await this.orderService.SendOrderToWarehouse(order);
 
-      return new OkResult();
+      return new OkObjectResult("Order Created Successfully");
     }
   }
 }
