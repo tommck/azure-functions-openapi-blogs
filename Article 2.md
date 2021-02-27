@@ -158,10 +158,73 @@ This results in
 
 So, we've now exposed the input and output types, but we haven't been able to add any additional information to describe objects or fields to our clients. To do that, we need to add XML comments to the output as well.
 
-## XML Comments
+## Better Comments in the OpenAPI Spec
 
 One thing that you may notice is that, at the top of the function, there is very little information about the method expect the name (e.g. "CreateOrder").
 
 To give client devs more information about the methods being exposed by an API, we can add C# XML Documentation information to the code and, if configured for it, Swashbuckle will incorporate that too.
 
-So, we will add comments to our methods and our DTOs as follows:
+### Comments
+
+We now add comments like this to our C# code (Functions and DTOs)
+
+```csharp
+/// <summary>
+/// Creates an Order that will be shipped to the Warehouse for fulfillment.
+/// </summary>
+/// <param name="req">the HTTP request</param>
+/// <param name="log">the logger</param>
+/// <returns>a success messge or a collection of error messages</returns>
+[ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+[ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
+[FunctionName("CreateOrder")]
+public async Task<IActionResult> Run(
+
+...
+
+/// <summary>
+/// An Order sent from the Shipping Division to be sent to the Warehouse
+/// </summary>
+public class Order
+{
+...
+```
+
+This is only the start. In order for the Swashbuckle library to read this information, you need to tell the C# compiler to generate the documentation in an XML file
+
+### Generate XML Doc file
+
+At the top of the `csproj` file, add the following line to the first `<PropertyGroup>` you see
+
+```xml
+<DocumentationFile>Bmazon.xml</DocumentationFile>
+```
+
+### Now tell Swashbuckle about the XML file
+
+Currently, we're configuring Swashbuckle in the `StartUp` file with:
+
+```csharp
+builder.AddSwashBuckle(Assembly.GetExecutingAssembly());
+```
+
+Replace this with
+
+```csharp
+builder.AddSwashBuckle(Assembly.GetExecutingAssembly(), opts => {
+  // override the default "Swashbuckle" title
+  opts.Title = "Bmazon Order Processing";
+
+  opts.XmlPath = "Bmazon.xml";
+});
+```
+
+Now, the final result will be a page with the new title and the order schema will have much more detail
+
+![Order Schema with comments](images/CreateOrder-Schema-WithComments.png)
+
+## Conclusion
+
+The users of your service will thank you for documenting your APIs like this. They will be able to understand the API without having to ask you questions as well. They can even generate code with various tools as well.
+
+**TODO: INSERT "STAY TUNED" MESSAGE HERE**
