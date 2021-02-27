@@ -29,6 +29,7 @@ namespace Bmazon.Functions
     /// <returns>a success messge or a collection of error messages</returns>
     [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
+    [ApiExplorerSettings(GroupName = "Shopping")]
     [FunctionName("CreateOrder")]
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "order")]

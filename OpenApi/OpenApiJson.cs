@@ -17,16 +17,17 @@ namespace Bmazon.OpenApi
     /// </summary>
     /// <param name="req">the http request</param>
     /// <param name="swashbuckleClient">the injected Swashbuckle client</param>
+    /// <param name="doc">the optional document from the URL (default: "Everything"</param>
     /// <returns>the JSON data as an http response</returns>
     [SwaggerIgnore]
     [FunctionName(nameof(OpenApiJson))]
     public static Task<HttpResponseMessage> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "openapi/json")]
-            HttpRequestMessage req,
-        [SwashBuckleClient] ISwashBuckleClient swashbuckleClient)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "openapi/json/{doc?}")]
+        HttpRequestMessage req,
+        [SwashBuckleClient] ISwashBuckleClient swashbuckleClient,
+        string doc)
     {
-      return Task.FromResult(swashbuckleClient.CreateSwaggerDocumentResponse(req));
+      return Task.FromResult(swashbuckleClient.CreateSwaggerDocumentResponse(req, doc ?? "Everything"));
     }
-
   }
 }

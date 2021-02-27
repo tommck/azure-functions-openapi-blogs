@@ -27,7 +27,9 @@ namespace Bmazon.Functions
     /// <param name="log">the logger</param>
     /// <returns>nothing</returns>
     [ProducesResponseType((int)HttpStatusCode.OK)]
+
     [FunctionName("OrderShipped")]
+    [ApiExplorerSettings(GroupName = "Warehouse")]
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "order/shipment")]
         [RequestBodyType(typeof(OrderShippingInfo), "The Shipping Information for the Order")]

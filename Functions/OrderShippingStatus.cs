@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Bmazon.Models;
 using Bmazon.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Bmazon.Functions
 {
@@ -24,6 +25,7 @@ namespace Bmazon.Functions
     /// <param name="id">the ID from the URL</param>
     /// <param name="log">the logger</param>
     /// <returns>the shipping info, or null if it hasn't shipped yet</returns>
+    [ApiExplorerSettings(GroupName = "Shared")]
     [FunctionName("OrderShippingStatus")]
     public async Task<OrderShippingInfo> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "order/shipment/{id}")] HttpRequest req,
