@@ -38,7 +38,7 @@ Swashbuckle only has access to the definition of your function in order to gener
         ILogger log)
 ```
 
-### Tell Swashbuckle the Body Type
+## Tell Swashbuckle the Body Type
 
 To document the type expected in the body of the POST, we need to tell Swashbuckle what to expect. We do this by using the `RequestBodyType` attribute from the `AzureFunctions.Extensions.Swashbuckle.Attribute` namespace.
 
@@ -128,7 +128,37 @@ public class OrderLineItem
 
 ![Create Order Body With Full API Spec](images/CreateOrder-Schema-FullSpec.png)
 
-### XML Comments
+## Tell Swasbuckle about the potential return values
+
+By default, Swachbuckle will tell the clients to expect a 200 (Success) HTTP result with no payload.
+
+![200 Result](images/Response200.png)
+
+This doesn't include any information about any payload sent back to the user and only covers the "happy path".
+
+If we know our Function is going to return multiple HTTP codes with different payloads, we need to tell Swashbuckle by using the `[ProducesResponseType]` attribute on the Function itself.
+
+Assuming we return the following:
+
+- 200/Success with a string message payload
+- 400/BadRequest with a collection of error messages
+
+We decorate our function like this
+
+```csharp
+[ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+[ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
+[FunctionName("CreateOrder")]
+public async Task<IActionResult> Run(
+```
+
+This results in
+
+![Multiple Response Codes](images/MultipleResponseTypes.png)
+
+So, we've now exposed the input and output types, but we haven't been able to add any additional information to describe objects or fields to our clients. To do that, we need to add XML comments to the output as well.
+
+## XML Comments
 
 One thing that you may notice is that, at the top of the function, there is very little information about the method expect the name (e.g. "CreateOrder").
 
