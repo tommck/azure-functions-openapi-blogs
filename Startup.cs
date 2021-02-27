@@ -11,7 +11,14 @@ namespace Bmazon
   {
     public override void Configure(IFunctionsHostBuilder builder)
     {
-      builder.AddSwashBuckle(Assembly.GetExecutingAssembly());
+      builder.AddSwashBuckle(Assembly.GetExecutingAssembly(), opts =>
+      {
+        // override the default "Swashbuckle" title
+        opts.Title = "Bmazon Order Processing";
+
+        opts.XmlPath = "Bmazon.xml";
+      });
+
 
       builder.Services.AddSingleton<OrderService>();
     }
