@@ -31,7 +31,8 @@ Now, currently, we have the following functions and groups that need to access t
 | Order Shipping Status | Gets the current shipping status of an order     |       ✔       |     ✔     |
 
 We have 2 Clients (Shopping Dept and Warehouse) that each need acccess to 2 functions.
-Since 1 of those functions is shared between the clients, we will need 3 groupings for this.
+
+⚠ Since 1 of those functions is shared between the clients, and you can't use more than one of the `ApiExplorerSettings` attributes per function, we will need 3 groupings for this, "Warehouse", "Shopping" and "Shared"
 
 ## Put Functions In Groups
 
