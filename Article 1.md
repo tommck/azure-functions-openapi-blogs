@@ -89,7 +89,7 @@ To install it:
 ```powershell
 C:\dev\Bmazon> dotnet add package AzureExtensions.Swashbuckle
   Determining projects to restore...
-  Writing C:\Users\thoma\AppData\Local\Temp\tmp69AA.tmp
+  Writing C:\Users\XXX\AppData\Local\Temp\tmp69AA.tmp
 info : Adding PackageReference for package 'AzureExtensions.Swashbuckle' into project 'C:\dev\Bmazon\Bmazon.csproj'.
 info :   GET https://api.nuget.org/v3/registration5-gz-semver2/azureextensions.swashbuckle/index.json
 info :   OK https://api.nuget.org/v3/registration5-gz-semver2/azureextensions.swashbuckle/index.json 140ms
@@ -194,3 +194,5 @@ For detailed output, run func with --verbose flag.
 ```
 
 Notice the list of functions shown with the URLs next to them. If you visit the OpenApiUI URL, you will see the
+
+TODO: One more thing here to show the output JSON (?)
