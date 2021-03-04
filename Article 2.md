@@ -178,16 +178,17 @@ We now add comments like this to our C# code (Functions and DTOs)
 [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
 [ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
 [FunctionName("CreateOrder")]
-public async Task<IActionResult> Run(
-
-...
+public async Task<IActionResult> Run() {
+// ...
+}
 
 /// <summary>
 /// An Order sent from the Shipping Division to be sent to the Warehouse
 /// </summary>
 public class Order
 {
-...
+//...
+}
 ```
 
 This is only the start. In order for the Swashbuckle library to read this information, you need to tell the C# compiler to generate the documentation in an XML file
@@ -212,9 +213,6 @@ Replace this with
 
 ```csharp
 builder.AddSwashBuckle(Assembly.GetExecutingAssembly(), opts => {
-  // override the default "Swashbuckle" title
-  opts.Title = "Bmazon Order Processing";
-
   opts.XmlPath = "Bmazon.xml";
 });
 ```
