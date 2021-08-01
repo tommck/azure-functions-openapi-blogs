@@ -212,6 +212,15 @@ For detailed output, run func with --verbose flag.
 [2021-02-27T15:05:41.693Z] Host lock lease acquired by instance ID '000000000000000000000000016514FF'.
 ```
 
-Notice the list of functions shown with the URLs next to them. If you visit the OpenApiUI URL, you will see the
+Notice the list of functions shown with the URLs next to them. If you visit the [OpenApiUI URL](http://localhost:7071/api/openapi/ui), you will see the following:
 
-TODO: One more thing here to show the output JSON (?)
+![Swagger UI](./images/swagger-ui.png)
+
+You'll notice that, by default, the Functions were created supporting both `GET` and `POST`.
+
+We can fix that by changing the following code on each function by removing either `"get"` or `"post"` appropriately
+
+```csharp
+[HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]
+HttpRequest req
+```
