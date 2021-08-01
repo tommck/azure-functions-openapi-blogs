@@ -18,13 +18,23 @@ This article covers steps 1 and 2 of these
 
 ## Create the Project
 
-To create the project, we will start with the [Azure Functions Core Tools](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local). At the time of this writing, the current version of this library is `3.0.3284`
+To create the project, we will start with the [Azure Functions Core Tools](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local). At the time of this writing, the current version of this library is `3.0.3477`
+
+> NOTE: This version uses dotnet cli version 3.1 internally, so if your `dotnet` executable in the path is not that version, it could cause you issues. This can be fixed by adding `global.json` file in the current directory with the following content:
+
+```json
+{
+  "sdk": {
+    "version": "3.1.411" // must be exact
+  }
+}
+```
 
 At the PowerShell prompt, we’ll do following to create our project:
 
 ```powershell
 C:\dev> func --version
-3.0.3284
+3.0.3477
 C:\dev> func init Bmazon --worker-runtime dotnet
 
 Writing C:\dev\Bmazon\.vscode\extensions.json
@@ -36,21 +46,21 @@ To Learn more about Azure Functions, visit the [Azure Functions Documentation](h
 
 ## Add Functions
 
-NOTE: We're making our functions use Anonymous Authorization because we will eventually be using [Azure API Managment](https://azure.microsoft.com/en-us/services/api-management/) to secure the functions.
+NOTE: We're making our functions use Anonymous Authorization because we will eventually be using [Azure API Managment](https://azure.microsoft.com/en-us/services/api-management/) and firewall rules to secure the functions.
 
 ### CreateOrder Function (Shopping Division)
 
 The Shopping division needs to call HTTP APIs to make an order to the warehouse, so we will add a `CreateOrder` function that performs this action.
 
 ```powershell
-C:\dev\Bmazon> func new --template HTTPTrigger --name CreateOrder --authlevel Anonymous
+C:\dev\Bmazon> func new --template HttpTrigger --name CreateOrder --authlevel Anonymous
 Use the up/down arrow keys to select a template:Function name: CreateOrder
 
 The function "CreateOrder" was created successfully from the "HTTPTrigger" template.
 C:\dev\Bmazon>
 ```
 
-Strangely, it outputs a prompt to select the template even when you have passed in the selection as a parameter. You can ignore this.
+*Strangely, it outputs a prompt to select the template even when you have passed in the selection as a parameter. You can ignore this.*
 
 ### Warehouse Division APIs
 
@@ -91,11 +101,9 @@ C:\dev\Bmazon> dotnet add package AzureExtensions.Swashbuckle
   Determining projects to restore...
   Writing C:\Users\XXX\AppData\Local\Temp\tmp69AA.tmp
 info : Adding PackageReference for package 'AzureExtensions.Swashbuckle' into project 'C:\dev\Bmazon\Bmazon.csproj'.
-info :   GET https://api.nuget.org/v3/registration5-gz-semver2/azureextensions.swashbuckle/index.json
-info :   OK https://api.nuget.org/v3/registration5-gz-semver2/azureextensions.swashbuckle/index.json 140ms
 info : Restoring packages for C:\dev\Bmazon\Bmazon.csproj...
-info : Package 'AzureExtensions.Swashbuckle' is compatible with all the specified frameworks in project 'C:\dev\Bmazon\Bmazon.csproj'.
-info : PackageReference for package 'AzureExtensions.Swashbuckle' version '3.2.2' added to file 'C:\dev\Bmazon\Bmazon.csproj'.
+...
+...
 info : Committing restore...
 info : Generating MSBuild file C:\dev\Bmazon\obj\Bmazon.csproj.nuget.g.props.
 info : Writing assets file to disk. Path: C:\dev\Bmazon\obj\project.assets.json
@@ -107,6 +115,10 @@ log  : Restored C:\dev\Bmazon\Bmazon.csproj (in 525 ms).
 In order to configure Swashbuckle, your Functions App needs a Functions `Startup` class like the following:
 
 ```csharp
+using System.Reflection;
+using AzureFunctions.Extensions.Swashbuckle;
+using Microsoft.Azure.Functions.Extensions.DependencyInjection;
+
 [assembly: FunctionsStartup(typeof(Bmazon.Startup))]
 namespace Bmazon
 {
@@ -120,26 +132,33 @@ namespace Bmazon
 }
 ```
 
-Additionally, you need to add Functions for generating the JSON and UI:
+Additionally, you need to add Functions for generating the JSON and UI (adding them in a single file for now):
 
 ```csharp
+using System.Net.Http;
+using System.Threading.Tasks;
+using AzureFunctions.Extensions.Swashbuckle;
+using AzureFunctions.Extensions.Swashbuckle.Attribute;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+
 namespace Bmazon.OpenApi
 {
   public static class OpenApiFunctions
   {
     [SwaggerIgnore]
     [FunctionName("OpenApiJson")]
-    public static Task<HttpResponseMessage> Run(
+    public static Task<HttpResponseMessage> RunJson(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "openapi/json")]
             HttpRequestMessage req,
         [SwashBuckleClient] ISwashBuckleClient swashbuckleClient)
     {
-      return Task.FromResult(swashbuckleClient.CreateSwaggerDocumentResponse(req));
+      return Task.FromResult(swashbuckleClient.CreateSwaggerJsonDocumentResponse(req));
     }
 
     [SwaggerIgnore]
     [FunctionName("OpenApiUI")]
-    public static Task<HttpResponseMessage> Run(
+    public static Task<HttpResponseMessage> RunUi(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "openapi/ui")]
             HttpRequestMessage req,
         [SwashBuckleClient] ISwashBuckleClient swashbuckleClient)
@@ -152,11 +171,11 @@ namespace Bmazon.OpenApi
 }
 ```
 
-NOTE: The `[SwaggerIgnore]` attribute causes Swashbuckle to ignore these API methods
+The `[SwaggerIgnore]` attribute causes Swashbuckle to ignore these API methods for document generation
 
 ### Generate the Document
 
-NOTE: **You must have the Azure Storage Emulator running locally in order for this to work**
+> NOTE: **You must have the Azure Storage Emulator running locally in order for this to work**
 
 ```powershell
 C:\dev\Bmazon> func start
