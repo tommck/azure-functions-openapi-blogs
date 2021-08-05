@@ -2,19 +2,16 @@
 
 **(This is part 2 of a X part series... )**
 
-I recently worked on an Azure Functions middleware project. The different clients to the APIs needed to be isolated so that each API client had the least amount of access possible. Our clients code in many different technologies (C#, Python, Java, etc). To document our APIs for these clients, we chose to use [OpenAPI (formerly Swagger)](https://swagger.io).
-
-For the sake of these articles, we will be working with a fictitious shopping site called “Bmazon” and handle sending orders to the warehouse and the warehouse sending shipping information back.
+# TODO: Need an Intro
 
 In this series of articles, I will walk you through:
 
-1.  ~~Creation of the Project~~
-1.  ~~Addition of OpenAPI spec generation~~
-1.  Increasing the Quality of the Documentation that is generated
-1.  Generation of separate documents based on consumer and the access they should have
+1.  ~~Creating the app & adding the OpenAPI document generation~~
+1.  **Increasing the quality of the generated documentation**
+1.  Generating separate documents based on consumer
 1.  Exposing these separate Consumer APIs as separate APIs in Azure API Management (?)
 
-This article covers step 3 of this list
+This article covers step 2 of this list
 
 ## The Problem
 
@@ -22,13 +19,17 @@ In the [LINK] previous article, we got the Azure Functions application to start 
 
 ![The Create Order API has no DTO details](images/CreateOrder-NoDetail.png)
 
-Here you can see that, even though the `CreateOrder` call takes an `Order` object in the body of the HTTP Post, there is no documentation describing this. This is not very helpful. It also only documents that the function will return a 200 status. If we add data validation to this method, we may wind up returning a 400 (Bad Request). We could also possibly return a 409 (Conflict) if the order already exists.
+Here you can see that, even though the `CreateOrder` call takes an `Order` object in the body of the HTTP Post, there is no documentation describing this. This is because, unlike when writing traditional dotnet core APIs, it's not a parameter to the function. Swashbuckle only has the function signature and other things that can be discovered through Reflection.
+
+This output is not very helpful to our clients. They need to know our inputs. Addtionally, it only documents that the function will return a 200 status. If we add data validation to this method, we may wind up returning a 400 (Bad Request). We could also possibly return a 409 (Conflict) if the order already exists.
+
+There has to be a better way!
 
 ## The Solution: Better Documentation
 
 In order for the OpenAPI documentation to be much better, we need to add a few things that Swashbuckle will use to generate better docs
 
-Swashbuckle only has access to the definition of your function in order to generate documentation, so the following translates to very little information. It doesn't even mention the `Order` type deserialized in the body of the method
+As I stated previously, Swashbuckle only has access to things that can be discovered through Refelction, which means the definition of your function, its parameters and any attributes decorating it, so the following translates to very little information. It doesn't even mention the `Order` type deserialized in the body of the method
 
 ```csharp
     [FunctionName("CreateOrder")]
@@ -162,9 +163,9 @@ So, we've now exposed the input and output types, but we haven't been able to ad
 
 One thing that you may notice is that, at the top of the function, there is very little information about the method expect the name (e.g. "CreateOrder").
 
-To give client devs more information about the methods being exposed by an API, we can add C# XML Documentation information to the code and, if configured for it, Swashbuckle will incorporate that too.
+Above, when I said "Swashbuckle only has access to things that can be discovered through Reflection", I was lying (Forgive me!). To give client devs more information about the methods being exposed by an API, we can add C# XML Documentation information to the code and, if configured for it, Swashbuckle will incorporate that too, which can be invaluable.
 
-### Comments
+### First, Add Comments
 
 We now add comments like this to our C# code (Functions and DTOs)
 
@@ -200,6 +201,8 @@ At the top of the `csproj` file, add the following line to the first `<PropertyG
 ```xml
 <DocumentationFile>Bmazon.xml</DocumentationFile>
 ```
+
+> *If you are using Visual Studio, you can access this setting from the `Build` tab on the Project settings*
 
 ### Now tell Swashbuckle about the XML file
 
