@@ -1,4 +1,4 @@
-﻿# Generating Separate OpenAPI Documents for Azure Functions with Swashbuckle
+﻿# Generating Multiple OpenAPI Documents for Azure Functions with Swashbuckle
 
 **(This is part 3 of a X part series... )**
 
