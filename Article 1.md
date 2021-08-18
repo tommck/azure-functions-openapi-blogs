@@ -84,10 +84,10 @@ The function "OrderShipped" was created successfully from the "HTTPTrigger" temp
 Since both the Shopping and Warehouse divisions will need to check on the status of an order at various times, there will be a shared function to check status
 
 ```powershell
-C:\dev\Bmazon> func new --template HTTPTrigger --name OrderStatus --authlevel Anonymous
+C:\dev\Bmazon> func new --template HTTPTrigger --name OrderShippingStatus --authlevel Anonymous
 Use the up/down arrow keys to select a template:Function name: OrderShipped
 
-The function "OrderStatus" was created successfully from the "HTTPTrigger" template.
+The function "OrderShippingStatus" was created successfully from the "HTTPTrigger" template.
 ```
 
 ### Choose GET or POST
@@ -250,7 +250,7 @@ If you visit the [OpenApiUI URL](http://localhost:7071/api/openapi/ui), you will
 
 That's It! You now have APIs that are documenting themselves!
 
-Now, if you add any new Functions, they will automatically show up here and tell your software's clients that those APIs exist.
+If you add any new Functions, they will automatically show up here as well. Your clients can download from the JSON endpoint and import the definitions into [Postman](https://www.postman.com) or client generators
 
 ## Next Steps
 
