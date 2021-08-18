@@ -25,15 +25,15 @@ namespace Bmazon
           new SwaggerDocument()
           {
             Name = "Everything",
-            Title = "Bmazon Shopping API",
-            Description = "API to handle Orders and shipping information for the Shopping   Department",
+            Title = "Bmazon All APIs",
+            Description = "All APIs",
             Version = "1.0"
           },
           new SwaggerDocument()
           {
             Name = "Shopping",
             Title = "Bmazon Shopping API",
-            Description = "API to handle Orders and shipping information for the Shopping   Department",
+            Description = "API to handle Orders and shipping information for the Shopping Department",
             Version = "1.0"
           },
           new SwaggerDocument()
@@ -50,6 +50,7 @@ namespace Bmazon
           // configure the separate document inclusion logic
           genOpts.DocInclusionPredicate((docName, apiDesc) =>
           {
+            // if we're generating the "everything" document, then include this method
             if (docName == "Everything")
             {
               return true;

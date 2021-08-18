@@ -17,19 +17,19 @@ namespace Bmazon.OpenApi
     /// </summary>
     /// <param name="req">the http request</param>
     /// <param name="swashbuckleClient">the injected Swashbuckle client</param>
-    /// <param name="doc">the optional document from the URL (default: "Everything"</param>
+    /// <param name="group">the optional document from the URL (default: "Everything")</param>
     /// <returns>the HTML page as an http response</returns>
     [SwaggerIgnore]
     [FunctionName(nameof(OpenApiUi))]
     public static Task<HttpResponseMessage> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "openapi/ui/{doc?}")]
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "openapi/ui/{group?}")]
             HttpRequestMessage req,
         [SwashBuckleClient] ISwashBuckleClient swashbuckleClient,
-        string doc)
+        string group)
     {
       // the CreateOpenApiUIResponse method actually generates the HTTP page from the JSON Function results
       return Task.FromResult(swashbuckleClient.CreateSwaggerUIResponse(
-        req, $"openapi/json/{doc ?? "Everything"}"));
+        req, $"openapi/json/{group ?? "Everything"}"));
     }
   }
 }

@@ -1,26 +1,21 @@
 ﻿# Generating Multiple OpenAPI Documents for Azure Functions with Swashbuckle
 
-**(This is part 3 of a X part series... )**
+This blog series guides you through creating a C# Function App, creating self-documenting APIs, ensuring the quality of that generated documentation, and seperating documentation based on the audience.
 
-I recently worked on an Azure Functions middleware project. The different clients to the APIs needed to be isolated so that each API client had the least amount of access possible. Our clients code in many different technologies (C#, Python, Java, etc). To document our APIs for these clients, we chose to use [OpenAPI (formerly Swagger)](https://swagger.io).
+The blog post assumes the following:
 
-For the sake of these articles, we will be working with a fictitious shopping site called “Bmazon” and handle sending orders to the warehouse and the warehouse sending shipping information back.
+- You are familiar with C#
+- You have knowledge of software development fundamentals
+- You are comfortable with command line interfaces
+- You have completed [Part Two](./Article%202.md) of this series
 
-In this series of articles, I will walk you through:
+This is the final post in this series.
 
-1.  ~~Creation of the Project~~
-1.  ~~Addition of OpenAPI spec generation~~
-1.  ~~Increasing the Quality of the Documentation that is generated~~
-1.  Generation of separate documents based on consumer and the access they should have
-1.  Exposing these separate Consumer APIs as separate APIs in Azure API Management (?)
+## We Need to Lock it Down
 
-This article covers step 4 of this list
+In the [previous article](./Article%202.md), we increased the quality of our OpenAPI spec by adding various C# attributes and XML comments to the mix.
 
-## We need to lock it down
-
-In the [LINK] previous article, we increased the quality of our OpenAPI spec by adding various C# attributes and XML comments to the mix.
-
-Now, it turns out that our security team alerted us that some folks in the Warehouse were using their access to the "Create Order" API to generate fake orders for themselves. This is a problem and they have now updated the Security Procedures to require restricing people to only knowing about the API calls they are supposed to use.
+Now, it turns out that our Security Team alerted us that some folks in the Warehouse were using their access to the "Create Order" API to generate fake orders for themselves. This is a problem and they have now updated the Security Procedures to require restricting people to only knowing about the API calls they are supposed to use.
 
 Now, currently, we have the following functions and groups that need to access them:
 
@@ -31,12 +26,13 @@ Now, currently, we have the following functions and groups that need to access t
 | Order Shipping Status | Gets the current shipping status of an order     |       ✔       |     ✔     |
 
 We have 2 Clients (Shopping Dept and Warehouse) that each need acccess to 2 functions.
-
-⚠ Since 1 of those functions is shared between the clients, and you can't use more than one of the `ApiExplorerSettings` attributes per function, we will need 3 groupings for this, "Warehouse", "Shopping" and "Shared"
+We need to separate these things into 2 groups.
 
 ## Put Functions In Groups
 
-Swashbuckle supports putting things in Groups by using the `ApiExplorerSettings` attribute from the `Microsoft.AspNetCore.Mvc` namespace. This attribute can be applied more than one time as well, so we can add these fo all the functions like this:
+Swashbuckle supports putting things in Groups by using the `ApiExplorerSettings` attribute from the `Microsoft.AspNetCore.Mvc` namespace. This attribute can be applied more than one time as well, so we can add these for all the functions like this:
+
+⚠ Since 1 of those functions is shared between the clients, and you can't use more than one `ApiExplorerSettings` attributes per function, we will actually need 3 groupings for this, "Warehouse", "Shopping" and "Shared".
 
 ```csharp
 [ApiExplorerSettings(GroupName = "Warehouse")]
@@ -65,7 +61,7 @@ In order to create separate specs, you need to configure Swashbuckle to generate
 
 ### Configure the documents
 
-Back to `Startup`, we update the configuration with this
+Back to `Startup.cs`, we update the configuration with this
 
 ```csharp
 builder.AddSwashBuckle(Assembly.GetExecutingAssembly(), opts =>
@@ -73,20 +69,20 @@ builder.AddSwashBuckle(Assembly.GetExecutingAssembly(), opts =>
   // incorporate the XML documentation
   opts.XmlPath = "Bmazon.xml";
 
-  // set up the docs with the same names as the group names used in the code
+  // set up the docs with the 2 specific group names as the group names used in the code
   opts.Documents = new SwaggerDocument[] {
     new SwaggerDocument()
     {
       Name = "Everything",
       Title = "Bmazon Shopping API",
-      Description = "API to handle Orders and shipping information for the Shopping   Department",
+      Description = "All APIs",
       Version = "1.0"
     },
     new SwaggerDocument()
     {
       Name = "Shopping",
       Title = "Bmazon Shopping API",
-      Description = "API to handle Orders and shipping information for the Shopping   Department",
+      Description = "API to handle Orders and shipping information for the Shopping Department",
       Version = "1.0"
     },
     new SwaggerDocument()
@@ -97,7 +93,7 @@ builder.AddSwashBuckle(Assembly.GetExecutingAssembly(), opts =>
       Version = "1.0"
     }
   };
-//...
+  //...
 ```
 
 We now have 1 "Everything" that we'll use as a default and 2 others that will be used for their respective Clients.
@@ -114,6 +110,7 @@ opts.ConfigureSwaggerGen = genOpts =>
   // configure the separate document inclusion logic
   genOpts.DocInclusionPredicate((docName, apiDesc) =>
   {
+    // if we're generating the "everything" document, then include this method
     if (docName == "Everything")
     {
       return true;
@@ -132,8 +129,61 @@ opts.ConfigureSwaggerGen = genOpts =>
 };
 ```
 
-Now, when you run the functions, you will have the option to have separate API specs for each Client so that they will only know about the APIs they can call and this can be locked down by Azure API Management at a later time.
+### Add Function Support For Selecting A Group
+
+In order to allow the clients to select a specific group, we need to modify the JSON and UI OpenAPI functions to support
+selecting a group.
+
+To do this, we add a new parameter to the JSON and UI Functions called "group" (defaulting ot "Everything")
+
+```csharp
+/// <summary>
+/// function implementation
+/// </summary>
+/// <param name="req">the http request</param>
+/// <param name="swashbuckleClient">the injected Swashbuckle client</param>
+/// <param name="group">the optional document from the URL (default: "Everything"</param>
+/// <returns>the JSON data as an http response</returns>
+[SwaggerIgnore]
+[FunctionName(nameof(OpenApiJson))]
+public static Task<HttpResponseMessage> Run(
+    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "openapi/json/{group?}")]
+    HttpRequestMessage req,
+    [SwashBuckleClient] ISwashBuckleClient swashbuckleClient,
+    string group)
+{
+  return Task.FromResult(swashbuckleClient.CreateSwaggerJsonDocumentResponse(req, group ?? "Everything"));
+}
+
+/// <summary>
+/// the function implemntation
+/// </summary>
+/// <param name="req">the http request</param>
+/// <param name="swashbuckleClient">the injected Swashbuckle client</param>
+/// <param name="group">the optional document from the URL (default: "Everything")</param>
+/// <returns>the HTML page as an http response</returns>
+[SwaggerIgnore]
+[FunctionName(nameof(OpenApiUi))]
+public static Task<HttpResponseMessage> Run(
+    [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "openapi/ui/{group?}")]
+        HttpRequestMessage req,
+    [SwashBuckleClient] ISwashBuckleClient swashbuckleClient,
+    string group)
+{
+  // the CreateOpenApiUIResponse method actually generates the HTTP page from the JSON Function results
+  return Task.FromResult(swashbuckleClient.CreateSwaggerUIResponse(
+    req, $"openapi/json/{group ?? "Everything"}"));
+}
+```
+
+Now, when you run the functions, you will have the option to have separate API specs for each Client by appending the document name to the URL, like "http://localhost:7071/api/openapi/ui/Shopping", so that they will only know about the APIs they can call. In order to further lock this down, you can add authorization to the specific endpoints at a later time, possibly with Azure API Management.
 
 ![Shopping API](images/ShoppingAPI.png)
 
 ![Warehouse API](images/WarehouseAPI.png)
+
+## Conclusion
+
+Now you have self-documenting APIs separated into different groupings that you can expose to individual clients.
+All you need to do is properly comment your code and decorate the Functions with the proper Attributes and you and
+your clients will be very satisfied.
