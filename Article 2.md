@@ -1,59 +1,60 @@
-﻿# Better API descriptions with Swashbuckle and Azure Functions
+﻿# Creating Self Documenting Azure Functions with C# and OpenAPI: Part Two
 
-**(This is part 2 of a X part series... )**
+This blog series guides you through creating a C# Function App, creating self-documenting APIs, ensuring the quality of that generated documentation, and seperating documentation based on the audience.
 
-I recently worked on an Azure Functions middleware project. The different clients to the APIs needed to be isolated so that each API client had the least amount of access possible. Our clients code in many different technologies (C#, Python, Java, etc). To document our APIs for these clients, we chose to use [OpenAPI (formerly Swagger)](https://swagger.io).
+The blog post assumes the following:
 
-For the sake of these articles, we will be working with a fictitious shopping site called “Bmazon” and handle sending orders to the warehouse and the warehouse sending shipping information back.
+- You are familiar with C#
+- You have knowledge of software development fundamentals
+- You are comfortable with command line interfaces
+- You have completed [Part One](./Article%201.md) of this series
 
-In this series of articles, I will walk you through:
+## Better Documentation
 
-1.  ~~Creation of the Project~~
-1.  ~~Addition of OpenAPI spec generation~~
-1.  Increasing the Quality of the Documentation that is generated
-1.  Generation of separate documents based on consumer and the access they should have
-1.  Exposing these separate Consumer APIs as separate APIs in Azure API Management (?)
-
-This article covers step 3 of this list
-
-## The Problem
-
-In the [LINK] previous article, we got the Azure Functions application to start generating OpenAPI docs for our functions, but something was missing:
+In the [Previous Post](./Article%201.md), we got the Azure Functions application to start generating OpenAPI docs for our functions, but something was missing:
 
 ![The Create Order API has no DTO details](images/CreateOrder-NoDetail.png)
 
-Here you can see that, even though the `CreateOrder` call takes an `Order` object in the body of the HTTP Post, there is no documentation describing this. This is not very helpful. It also only documents that the function will return a 200 status. If we add data validation to this method, we may wind up returning a 400 (Bad Request). We could also possibly return a 409 (Conflict) if the order already exists.
+> > > TODO: mention that I added a little behind the scenes code and drop a link to the code?
 
-## The Solution: Better Documentation
+Here you can see that, even though the `CreateOrder` call takes an `Order` object in the body of the HTTP Post, there is no documentation describing this. This is because, unlike when writing traditional dotnet core APIs, the order is not a parameter to the function. Swashbuckle only has the function signature and anything that can be discovered through Reflection.
+
+This output is not very helpful to our clients. They need to know our inputs, potential HTTP Codes to expect (it just assumes that it will return a 200), and other pertinent information like what the method does and what the return data will look like.
+
+For instance, if we add data validation to this method, we may wind up returning a 400 (Bad Request). We could also possibly return a 409 (Conflict) if the order already exists.
+
+There has to be a better way!
+
+## The Solution
 
 In order for the OpenAPI documentation to be much better, we need to add a few things that Swashbuckle will use to generate better docs
 
-Swashbuckle only has access to the definition of your function in order to generate documentation, so the following translates to very little information. It doesn't even mention the `Order` type deserialized in the body of the method
+As I stated previously, Swashbuckle only has access to things that can be discovered through Refelction, which means the definition of your function, its parameters and any attributes decorating it, so the following translates to very little information. It doesn't even mention the `Order` type deserialized in the body of the method
 
 ```csharp
-    [FunctionName("CreateOrder")]
-    public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "order")]
-        HttpRequestMessage req,
-        ILogger log)
+[FunctionName("CreateOrder")]
+public async Task<IActionResult> Run(
+    [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "order")]
+    HttpRequestMessage req,
+    ILogger log)
 ```
 
-## Tell Swashbuckle the Body Type
+### Tell Swashbuckle the Body Type
 
 To document the type expected in the body of the POST, we need to tell Swashbuckle what to expect. We do this by using the `RequestBodyType` attribute from the `AzureFunctions.Extensions.Swashbuckle.Attribute` namespace.
 
-Note that this is an _additional_ attribute on the HttpRequestMessage parameter
+Note that this is an _additional_ attribute on the `HttpRequestMessage` parameter
 
 ```csharp
-    [FunctionName("CreateOrder")]
-    public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "order")]
-        [RequestBodyType(typeof(Order), "The Order To Create")] // Describe the Body
-        HttpRequestMessage req,
-        ILogger log)
+[FunctionName("CreateOrder")]
+public async Task<IActionResult> Run(
+    [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "order")]
+    [RequestBodyType(typeof(Order), "The Order To Create")] // Describe the Body
+    HttpRequestMessage req,
+    ILogger log)
 ```
 
-With this in place, we now see that the body type is present in the UI:
+With this in place, Swashbuckle knows what type the body contains ans we now see that the body type is present in the UI:
 
 ![The Create Order API With Body Type](images/CreateOrder-BodyType.png)
 
@@ -61,7 +62,7 @@ If you click on the "Schema" link, you will even see the data type names being u
 
 ![The Create Order API With Body Type](images/CreateOrder-BodyTypeSchema.png)
 
-Note that the `Items` array is marked `nullable: true`. We will address that below in the `Data Annotations` section
+Note that the `Items` array is marked `nullable: true` which is not desirable. We will address that below in the `Data Annotations` section.
 
 The bottom of the page also shows you all the current objects in the Schema that are known:
 
@@ -69,7 +70,7 @@ The bottom of the page also shows you all the current objects in the Schema that
 
 This information documents all the details about the DTOs being used in this API.
 
-### Data Annotations
+### Add Data Annotations
 
 Above, the `Order`'s `Items` collection was marked as nullable. We want to fix that and other validation information that Swashbucklet can read. To do that, we add [Data Annotations](https://docs.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations?view=netcore-3.1)
 
@@ -83,8 +84,10 @@ public class Order
 }
 ```
 
-In order to tell Swashbuckle (and our clients) that the Items collection is not optional, we have to mark it `[Required]` and `[NotNull]` from the `System.Diagnostics.CodeAnalysis` namespace.
+In order to tell Swashbuckle (and our clients) that the Items collection is required, we have to mark it `[Required]` and `[NotNull]` from the `System.Diagnostics.CodeAnalysis` namespace.
+
 The NotNull attribute is also needed because OpenAPI, not being language-specific, supports the concept of `null` along with the lack of presence of the variable at all. JavaScript developers will relate to this concept with `undefined` and `null` keywords.
+
 So, in order to tell clients that fields MUST have a value, you need to add both attributes
 
 ```csharp
@@ -101,7 +104,7 @@ The results:
 
 ![The Create Order Body With required Items](images/CreateOrder-Schema-RequiredItems.png)
 
-Note the red "\*" next to the "items" collection and the lack of the `nullable:true`.
+Note the red `"*"`, meaning required, next to the `items` collection and the lack of the `nullable:true`.
 
 We'll mark the ID, Quantity and SKUs all required as well. Additionally, we'll put rational `[Range]` and other appropriate restrictions as well:
 
@@ -122,15 +125,17 @@ public class OrderLineItem
   public int Quantity { get; set; }
 
   [Required, NotNull, MinLength(1)]
-  public string SKU { get; set; } // Changed this to a string because it made more sense
+  public string SKU { get; set; }
 }
 ```
 
 ![Create Order Body With Full API Spec](images/CreateOrder-Schema-FullSpec.png)
 
-## Tell Swasbuckle about the potential return values
+_Now your clients know the simple data validations for these objects_
 
-By default, Swachbuckle will tell the clients to expect a 200 (Success) HTTP result with no payload.
+### Tell Swashbuckle about the potential return values
+
+By default, Swashbuckle will tell the clients to expect a 200 (Success) HTTP result with no payload.
 
 ![200 Result](images/Response200.png)
 
@@ -146,8 +151,9 @@ Assuming we return the following:
 We decorate our function like this
 
 ```csharp
-[ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
-[ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
+[ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+[ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status400BadRequest)]
+HttpStatusCode.BadRequest)]
 [FunctionName("CreateOrder")]
 public async Task<IActionResult> Run(
 ```
@@ -162,9 +168,9 @@ So, we've now exposed the input and output types, but we haven't been able to ad
 
 One thing that you may notice is that, at the top of the function, there is very little information about the method expect the name (e.g. "CreateOrder").
 
-To give client devs more information about the methods being exposed by an API, we can add C# XML Documentation information to the code and, if configured for it, Swashbuckle will incorporate that too.
+Also, I lied to you. Above, when I said "Swashbuckle only has access to things that can be discovered through Reflection", I was lying (Forgive me!). To give client devs more information about the methods being exposed by an API, we can add C# XML Documentation information to the code and, if configured for it, Swashbuckle will incorporate that too, which can be invaluable.
 
-### Comments
+### Add XML Comments
 
 We now add comments like this to our C# code (Functions and DTOs)
 
@@ -174,20 +180,28 @@ We now add comments like this to our C# code (Functions and DTOs)
 /// </summary>
 /// <param name="req">the HTTP request</param>
 /// <param name="log">the logger</param>
-/// <returns>a success messge or a collection of error messages</returns>
-[ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
-[ProducesResponseType(typeof(IEnumerable<string>), (int)HttpStatusCode.BadRequest)]
+/// <returns>a success message or a collection of error messages</returns>
+/// <response code="200">
+///   Indicates success and returns a user-friendly message
+/// </response>
+/// <response code="400">
+///   Indicates a data validation issue and will return a list of data validation errors
+/// </response>
+[ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+[ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status400BadRequest)]
+HttpStatusCode.BadRequest)]
 [FunctionName("CreateOrder")]
-public async Task<IActionResult> Run(
-
-...
+public async Task<IActionResult> Run() {
+// ...
+}
 
 /// <summary>
 /// An Order sent from the Shipping Division to be sent to the Warehouse
 /// </summary>
 public class Order
 {
-...
+//...
+}
 ```
 
 This is only the start. In order for the Swashbuckle library to read this information, you need to tell the C# compiler to generate the documentation in an XML file
@@ -200,9 +214,11 @@ At the top of the `csproj` file, add the following line to the first `<PropertyG
 <DocumentationFile>Bmazon.xml</DocumentationFile>
 ```
 
+> _If you are using Visual Studio, you can access this setting from the `Build` tab on the Project settings_
+
 ### Now tell Swashbuckle about the XML file
 
-Currently, we're configuring Swashbuckle in the `StartUp` file with:
+Currently, we're configuring Swashbuckle in the `StartUp.cs` file with:
 
 ```csharp
 builder.AddSwashBuckle(Assembly.GetExecutingAssembly());
@@ -212,19 +228,19 @@ Replace this with
 
 ```csharp
 builder.AddSwashBuckle(Assembly.GetExecutingAssembly(), opts => {
-  // override the default "Swashbuckle" title
-  opts.Title = "Bmazon Order Processing";
-
   opts.XmlPath = "Bmazon.xml";
 });
 ```
 
-Now, the final result will be a page with the new title and the order schema will have much more detail
+Now, when you rerun the app, the final result will be a page with the new title and the order schema will have much more detail.
 
 ![Order Schema with comments](images/CreateOrder-Schema-WithComments.png)
 
-## Conclusion
+The users of your service will thank you for documenting your APIs this thoroughly. Additionally, they won't have to ask you questions about the details about how to use the APIs. They can even generate client code with various tools as well.
 
-The users of your service will thank you for documenting your APIs like this. They will be able to understand the API without having to ask you questions as well. They can even generate code with various tools as well.
+## Next Steps
 
-**TODO: INSERT "STAY TUNED" MESSAGE HERE**
+Now that you have really descriptive documentation for your APIs being automatically generated, you may have some clients asking why they are seeing documentation for APIs they're not using. You
+may not even want different clients knowing about APIs they aren't supposed to use.
+
+In part three of the series, I will show you how to separate the APIs out into separate groupings and keep your clients all in their own lane.

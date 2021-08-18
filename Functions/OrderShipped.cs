@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using Bmazon.Models;
 using Bmazon.Services;
-using System.Net;
 using AzureFunctions.Extensions.Swashbuckle.Attribute;
+using Microsoft.AspNetCore.Http;
 
 namespace Bmazon.Functions
 {
@@ -26,8 +26,10 @@ namespace Bmazon.Functions
     /// <param name="req">the request</param>
     /// <param name="log">the logger</param>
     /// <returns>nothing</returns>
-    [ProducesResponseType((int)HttpStatusCode.OK)]
-
+    /// <response code="200">
+    ///   Indicates success. Returns no payload
+    /// </response>
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [FunctionName("OrderShipped")]
     [ApiExplorerSettings(GroupName = "Warehouse")]
     public async Task<IActionResult> Run(

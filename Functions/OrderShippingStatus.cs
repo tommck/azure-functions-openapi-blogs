@@ -25,8 +25,16 @@ namespace Bmazon.Functions
     /// <param name="id">the ID from the URL</param>
     /// <param name="log">the logger</param>
     /// <returns>the shipping info, or null if it hasn't shipped yet</returns>
-    [ApiExplorerSettings(GroupName = "Shared")]
+    /// <response code="200">
+    ///   Indicates success and returns the order's status
+    /// </response>
+    /// <response code="404">
+    ///   Indicates that the order was not found
+    /// </response>
     [FunctionName("OrderShippingStatus")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    [ApiExplorerSettings(GroupName = "Shared")]
     public async Task<OrderShippingInfo> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "order/shipment/{id}")] HttpRequest req,
         int id, // comes from the URL
