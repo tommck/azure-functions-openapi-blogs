@@ -1,4 +1,4 @@
-﻿# Generating OpenAPI Documents in Azure Functions with C# and Swashbuckle
+﻿# Creating Self Documenting Azure Functions with C# and OpenAPI: Part One
 
 When migrating existing business services to Azure PaaS as part of an App Modernization project, you may find yourself seriously considering serverless computing using Azure Functions, especially if your target architecture includes MicroServices.
 
@@ -6,7 +6,7 @@ Azure Functions let you focus on what counts -- your requirements, your time and
 
 When creating new APIs in any technology, one thing is very important: Documenting those APIs so that others can use them. This is especially important in large enterprises or situations where you are exposing these APIs to the public.
 
-This blog series guides you through creating a C# Function App, creating self-documenting APIs, ensuring the quality of that generated documentation, and seperating documentation based on the audience.
+This blog series guides you through creating a C# Function App, creating self-documenting APIs, ensuring the quality of that generated documentation, and separating documentation based on the audience.
 
 The blog series assumes the following:
 
