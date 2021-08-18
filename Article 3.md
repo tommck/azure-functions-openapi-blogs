@@ -1,4 +1,4 @@
-﻿# Generating Multiple OpenAPI Documents for Azure Functions with Swashbuckle
+# Creating Self Documenting Azure Functions with C# and OpenAPI: Part Three
 
 This blog series guides you through creating a C# Function App, creating self-documenting APIs, ensuring the quality of that generated documentation, and seperating documentation based on the audience.
 
