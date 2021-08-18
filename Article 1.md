@@ -33,7 +33,7 @@ To create the app, we will start with the [Azure Functions Core Tools](https://d
 {
   "sdk": {
     // must be the exact dotnet 3.x version string
-    "version": "3.1.411" 
+    "version": "3.1.411"
   }
 }
 ```
@@ -54,13 +54,13 @@ To Learn more about Azure Functions, visit the [Azure Functions Documentation](h
 
 ## Add Functions
 
-*NOTE: We're using Anonymous Authorization because we will eventually be using [Azure API Managment](https://azure.microsoft.com/en-us/services/api-management/) and firewall rules to secure the functions.*
+_NOTE: We're using Anonymous Authorization because we will eventually be using [Azure API Managment](https://azure.microsoft.com/en-us/services/api-management/) and firewall rules to secure the functions._
 
 ### Shipping Division API
 
-The Shopping division needs to call HTTP APIs to make an order to the warehouse, so we will add a `CreateOrder` function that performs this action. 
+The Shopping division needs to call HTTP APIs to make an order to the warehouse, so we will add a `CreateOrder` function that performs this action.
 
-*(This can be done interactively by just running `func new` and following prompts, but using the command line parameters is more concise)*
+_(This can be done interactively by just running `func new` and following prompts, but using the command line parameters is more concise)_
 
 ```powershell
 C:\dev\Bmazon> func new --template HttpTrigger --name CreateOrder --authlevel Anonymous
@@ -69,7 +69,7 @@ Use the up/down arrow keys to select a template:Function name: CreateOrder
 The function "CreateOrder" was created successfully from the "HTTPTrigger" template.
 ```
 
-*Strangely, it outputs a prompt to select the template even when you have passed in the selection as a parameter. You can ignore this.*
+_Strangely, it outputs a prompt to select the template even when you have passed in the selection as a parameter. You can ignore this._
 
 ### Warehouse Division API
 
@@ -93,6 +93,17 @@ C:\dev\Bmazon> func new --template HTTPTrigger --name OrderStatus --authlevel An
 Use the up/down arrow keys to select a template:Function name: OrderShipped
 
 The function "OrderStatus" was created successfully from the "HTTPTrigger" template.
+```
+
+### Choose GET or POST
+
+If you look at the code, you'll notice that, by default, the Functions were created supporting both `GET` and `POST`.
+
+We can fix that by changing the following code on each function by removing either `"get"` or `"post"` appropriately (Typically you will have the first 2 operations be `POST`s and the latter be `GET`)
+
+```csharp
+[HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]
+HttpRequest req
 ```
 
 ### Organizing the Code
@@ -230,7 +241,7 @@ For detailed output, run func with --verbose flag.
 [2021-02-27T15:05:41.693Z] Host lock lease acquired by instance ID '000000000000000000000000016514FF'.
 ```
 
->*If you don't see that last line after a few seconds, you probably don't have the storage emulator running*
+> _If you don't see that last line after a few seconds, you probably don't have the storage emulator running_
 
 Notice the list of functions shown with the URLs next to them.
 
@@ -238,19 +249,9 @@ If you visit the [OpenApiUI URL](http://localhost:7071/api/openapi/ui), you will
 
 ![Swagger UI](./images/swagger-ui.png)
 
-You'll notice that, by default, the Functions were created supporting both `GET` and `POST`.
+You now have APIs that are documenting themselves!
 
-We can fix that by changing the following code on each function by removing either `"get"` or `"post"` appropriately (Typically you will have the first 2 operations be `POST`s and the latter be `GET`)
+## Next Steps
 
-```csharp
-[HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]
-HttpRequest req
-```
-
-After you've updated the `get/post` settings, you now have APIs that are documenting themselves!
-
-One problem is that they are not documenting themselves *well*.
-
-In the [next article](./Article%202.md), I will show you how to make the documentation MUCH better.
-
-# TODO: Put a teaser/demonstration of how bad the existing docs are to make them want to read the next one?
+Now that you have self-documenting APIs, you may notice that the information in the Swagger UI is rather underwhelming.
+In part two of the series, I will show you how to make the documentation MUCH better.
