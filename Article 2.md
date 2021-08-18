@@ -240,7 +240,7 @@ The users of your service will thank you for documenting your APIs this thorough
 
 ## Next Steps
 
-Now that you have really descriptive documentation for your APIs being automatically generated, you may have some clients asking why they are seeing documentation for APIs they're not using. You
-may not even want different clients knowing about APIs they aren't supposed to use.
+Now that you have really descriptive documentation for your APIs being automatically generated, your security
+folks may not like you sending all your API documentation to every single client, regardless of need.
 
 In part three of the series, I will show you how to separate the APIs out into separate groupings and keep your clients all in their own lane.
