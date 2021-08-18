@@ -1,39 +1,34 @@
 ﻿# Generating OpenAPI Documents in Azure Functions with C# and Swashbuckle
 
-**(This is part 1 of a X part series... )**
-
-## Overview
-
-When migrating existing business services to Azure PaaS as part of an App Modernization project, you may find yourself seriously considering serverless computing with Azure Functions.
+When migrating existing business services to Azure PaaS as part of an App Modernization project, you may find yourself seriously considering serverless computing using Azure Functions, especially if your target architecture includes MicroServices.
 
 Azure Functions let you focus on what counts -- your requirements, your time and your code -- and less about boilerplate code, infrastructure and processes.
 
 When creating new APIs in any technology, one thing is very important: Documenting those APIs so that others can use them. This is especially important in large enterprises or situations where you are exposing these APIs to the public.
 
+This blog series guides you through creating a C# Function App, creating self-documenting APIs, ensuring the quality of that generated documentation, and seperating documentation based on the audience.
+
+The blog series assumes the following:
+
+- You are familiar with C#
+- You have knowledge of software development fundamentals
+- You are comfortable with command line interfaces
+
 At AIS, we've decided that the best approach to documenting your APIs is to use [OpenAPI (formerly Swagger)](https://swagger.io) to have the APIs (nearly) document themselves. This saves time in the long run and even enables API clients to automatically generate client code to interact with your APIS.
 
-In this series of articles, I will walk you through a few steps for creating well-documented Azure Functions for our fictitious shopping site called “Bmazon”.
-
-In this series of articles, I will walk you through:
-
-1.  **Creating the app & adding the OpenAPI document generation**
-1.  Increasing the quality of the generated documentation
-1.  Generating separate documents based on consumer
-1.  Exposing these separate Consumer APIs as separate APIs in Azure API Management (?)
-
-This article covers step 1.
+For these articles, I will walk you through a few steps for creating well-documented Azure Functions for our fictitious shopping site called “Bmazon”.
 
 ## Creating the App
 
 To create the app, we will start with the [Azure Functions Core Tools](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local). At the time of this writing, the current version of this library is `3.0.3477`
 
-> NOTE: This version uses dotnet cli version 3.1 internally, so if your `dotnet` executable in the path is not that version, it could cause you issues. If you run into errors, this may be fixed by adding `global.json` file in the current directory with the following content
+> NOTE: This version uses dotnet cli version 3.1 internally, so if your `dotnet` executable in the path is not that version, it could cause you issues. If you run into errors, this may be fixed by adding `global.json` file in the current directory with the following content, which will tell the dotnet cli to use whatever `3.1.x` version you have installed
 
 ```json
 {
   "sdk": {
-    // must be the exact dotnet 3.x version string
-    "version": "3.1.411"
+    "version": "3.1.0",
+    "rollForward": "latestMinor"
   }
 }
 ```
@@ -54,9 +49,9 @@ To Learn more about Azure Functions, visit the [Azure Functions Documentation](h
 
 ## Add Functions
 
-_NOTE: We're using Anonymous Authorization because we will eventually be using [Azure API Managment](https://azure.microsoft.com/en-us/services/api-management/) and firewall rules to secure the functions._
+We're going to add 3 different functions to our app.
 
-### Shipping Division API
+### Shopping API
 
 The Shopping division needs to call HTTP APIs to make an order to the warehouse, so we will add a `CreateOrder` function that performs this action.
 
@@ -71,7 +66,7 @@ The function "CreateOrder" was created successfully from the "HTTPTrigger" templ
 
 _Strangely, it outputs a prompt to select the template even when you have passed in the selection as a parameter. You can ignore this._
 
-### Warehouse Division API
+### Warehouse API
 
 Later in our process, the Warehouse team needs to call an HTTP endpoint to send tracking information back to the Shopping division.
 
@@ -89,22 +84,22 @@ The function "OrderShipped" was created successfully from the "HTTPTrigger" temp
 Since both the Shopping and Warehouse divisions will need to check on the status of an order at various times, there will be a shared function to check status
 
 ```powershell
-C:\dev\Bmazon> func new --template HTTPTrigger --name OrderStatus --authlevel Anonymous
+C:\dev\Bmazon> func new --template HTTPTrigger --name OrderShippingStatus --authlevel Anonymous
 Use the up/down arrow keys to select a template:Function name: OrderShipped
 
-The function "OrderStatus" was created successfully from the "HTTPTrigger" template.
+The function "OrderShippingStatus" was created successfully from the "HTTPTrigger" template.
 ```
 
 ### Choose GET or POST
 
 If you look at the code, you'll notice that, by default, the Functions were created supporting both `GET` and `POST`.
 
-We can fix that by changing the following code on each function by removing either `"get"` or `"post"` appropriately (Typically you will have the first 2 operations be `POST`s and the latter be `GET`)
-
 ```csharp
 [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]
 HttpRequest req
 ```
+
+We can fix that by changing the following code on each function by removing either `"get"` or `"post"` appropriately (Typically you will have the first 2 operations be `POST`s and the latter be `GET`)
 
 ### Organizing the Code
 
@@ -141,7 +136,7 @@ log  : Restored C:\dev\Bmazon\Bmazon.csproj (in 525 ms).
 
 ### Setting up Swashbuckle
 
-In order to configure Swashbuckle, your Functions App needs a Functions `Startup` class like the following, which we'll put in `Startup.cs`
+In order to configure Swashbuckle, your Functions App needs a Functions `Startup` class like the following, which we'll put in `Startup.cs` in the `Bmazon` folder
 
 ```csharp
 using System.Reflection;
@@ -161,7 +156,11 @@ namespace Bmazon
 }
 ```
 
-Your code will also need to expose the OpenAPI JSON and UI endpoints as functions (adding them in a single `OpenApi\OpenApiFunctions.cs` file for now)
+#### Exposing OpenAPI Endpoints
+
+Your code will also need to expose the OpenAPI JSON and UI endpoints as functions so that client code can load them on demand. 
+
+_(Adding them in a single `OpenApi\OpenApiFunctions.cs` file for now)_
 
 ```csharp
 using System.Net.Http;
@@ -200,11 +199,11 @@ namespace Bmazon.OpenApi
 }
 ```
 
-The `[SwaggerIgnore]` attribute causes Swashbuckle to ignore these API methods for document generation
+This sets up 2 new Functions on the `openapi/json` and `openapi/ui` urls to load the JSON file and Swagger UI respectively. The `[SwaggerIgnore]` attribute causes Swashbuckle to ignore these API methods for document generation purposes.
 
 ### Generate the Document
 
-> NOTE: **You must have the Azure Storage Emulator RUNNING locally in order for this to work properly**
+> NOTE: **You must have the Azure Storage Emulator or Azurite RUNNING locally in order for this to work properly**
 
 ```powershell
 C:\dev\Bmazon> func start
@@ -249,9 +248,14 @@ If you visit the [OpenApiUI URL](http://localhost:7071/api/openapi/ui), you will
 
 ![Swagger UI](./images/swagger-ui.png)
 
-You now have APIs that are documenting themselves!
+That's It! You now have APIs that are documenting themselves!
+
+If you add any new Functions, they will automatically show up here as well. Your clients can download from the JSON endpoint and import the definitions into [Postman](https://www.postman.com) or client generators
 
 ## Next Steps
 
-Now that you have self-documenting APIs, you may notice that the information in the Swagger UI is rather underwhelming.
+Now that you have self-documenting APIs, you may notice that the information in the Swagger UI is rather 
+underwhelming. Due to the nature of Azure Functions, there is very little information that Swagger can glean
+from the runtime type information it can gather.
+
 In part two of the series, I will show you how to make the documentation MUCH better.
