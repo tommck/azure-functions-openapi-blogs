@@ -25,7 +25,7 @@ namespace Bmazon.OpenApi
             HttpRequestMessage req,
         [SwashBuckleClient] ISwashBuckleClient swashbuckleClient)
     {
-      return Task.FromResult(swashbuckleClient.CreateSwaggerDocumentResponse(req));
+      return Task.FromResult(swashbuckleClient.CreateSwaggerJsonDocumentResponse(req));
     }
 
   }
