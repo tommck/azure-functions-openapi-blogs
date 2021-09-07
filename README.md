@@ -2,4 +2,4 @@
 
 This code repository is related to a series of blog posts.
 
-Here is is a link to [Part One](https://www.ais.com/self-documenting…openapi-part-one/)
+Here is is a link to [Part One](https://www.ais.com/?p=79904)
