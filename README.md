@@ -1,5 +1,5 @@
 # Self Documenting Azure Functions with C# and OpenAPI blog series
 
-This is a series of articles related to this topic.
+This code repository is related to a series of blog posts.
 
-Here is [Part One](https://www.ais.com/self-documenting…openapi-part-one/)
+Here is is a link to [Part One](https://www.ais.com/self-documenting…openapi-part-one/)
