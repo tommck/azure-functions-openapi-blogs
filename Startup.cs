@@ -20,7 +20,8 @@ namespace Bmazon
         // incorporate the XML documentation
         opts.XmlPath = "Bmazon.xml";
 
-        // set up the docs with the same names as the group names used in the code
+        // set up an "Everything" document and 2 documents with the
+        // same names as the group names used in the code
         opts.Documents = new SwaggerDocument[] {
           new SwaggerDocument()
           {
@@ -33,14 +34,14 @@ namespace Bmazon
           {
             Name = "Shopping",
             Title = "Bmazon Shopping API",
-            Description = "API to handle Orders and shipping information for the Shopping Department",
+            Description = "API for the Shopping Department",
             Version = "1.0"
           },
           new SwaggerDocument()
           {
             Name = "Warehouse",
             Title = "Bmazon Warehouse API",
-            Description = "API to receive shipping formation from the Bmazon Warehouse",
+            Description = "API for the Bmazon Warehouse",
             Version = "1.0"
           }
         };
@@ -50,16 +51,20 @@ namespace Bmazon
           // configure the separate document inclusion logic
           genOpts.DocInclusionPredicate((docName, apiDesc) =>
           {
-            // if we're generating the "everything" document, then include this method
+            // generating the "everything" doc? then include this method
             if (docName == "Everything")
             {
               return true;
             }
 
-            if (!apiDesc.TryGetMethodInfo(out MethodInfo methodInfo)) return false;
+            if (!apiDesc.TryGetMethodInfo(out MethodInfo methodInfo))
+            {
+              return false;
+            }
 
-            // pull the value(s) of the [ApiExplorerSettings(GroupName= "foo")] attribute
-            var attr = methodInfo.GetCustomAttributes(true).OfType<ApiExplorerSettingsAttribute>().FirstOrDefault();
+            // get the value of the [ApiExplorerSettings(GroupName= "foo")]
+            var attr = methodInfo.GetCustomAttributes(true)
+              .OfType<ApiExplorerSettingsAttribute>().FirstOrDefault();
 
             var groupName = attr?.GroupName;
 

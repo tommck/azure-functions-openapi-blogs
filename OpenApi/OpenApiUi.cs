@@ -13,7 +13,7 @@ namespace Bmazon.OpenApi
   public static class OpenApiUi
   {
     /// <summary>
-    /// the function implemntation
+    /// the function implementation
     /// </summary>
     /// <param name="req">the http request</param>
     /// <param name="swashbuckleClient">the injected Swashbuckle client</param>

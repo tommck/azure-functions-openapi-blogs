@@ -17,7 +17,7 @@ namespace Bmazon.OpenApi
     /// </summary>
     /// <param name="req">the http request</param>
     /// <param name="swashbuckleClient">the injected Swashbuckle client</param>
-    /// <param name="group">the optional document from the URL (default: "Everything"</param>
+    /// <param name="group">the document to get (default: "Everything")</param>
     /// <returns>the JSON data as an http response</returns>
     [SwaggerIgnore]
     [FunctionName(nameof(OpenApiJson))]
