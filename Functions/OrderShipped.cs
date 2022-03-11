@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using Bmazon.Models;
 using Bmazon.Services;
-using AzureFunctions.Extensions.Swashbuckle.Attribute;
-using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using System.Net;
 
 namespace Bmazon.Functions
 {
@@ -26,15 +26,13 @@ namespace Bmazon.Functions
     /// <param name="req">the request</param>
     /// <param name="log">the logger</param>
     /// <returns>nothing</returns>
-    /// <response code="200">
-    ///   Indicates success. Returns no payload
-    /// </response>
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [FunctionName("OrderShipped")]
     [ApiExplorerSettings(GroupName = "Warehouse")]
+    [OpenApiOperation("OrderShipped", tags: new[] { "Warehouse" }, Description = "Called to tell the system that an Order has shipped from the warehouse")]
+    [OpenApiRequestBody(contentType: "application/json", typeof(OrderShippingInfo), Description = "The Shipping Information for the Order")]
+    [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.OK, Description = "Indicates success. Returns no payload")]
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "order/shipment")]
-        [RequestBodyType(typeof(OrderShippingInfo), "The Shipping Information for the Order")]
         HttpRequestMessage req,
         ILogger log)
     {

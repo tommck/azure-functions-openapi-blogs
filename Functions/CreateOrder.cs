@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -8,7 +7,9 @@ using Microsoft.Extensions.Logging;
 using Bmazon.Models;
 using System.Net.Http;
 using Bmazon.Services;
-using AzureFunctions.Extensions.Swashbuckle.Attribute;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.OpenApi.Models;
+using System.Net;
 
 namespace Bmazon.Functions
 {
@@ -25,21 +26,14 @@ namespace Bmazon.Functions
     /// </summary>
     /// <param name="req">the HTTP request</param>
     /// <param name="log">the logger</param>
-    /// <returns>a success messge or a collection of error messages</returns>
     /// <returns>a success message or a collection of error messages</returns>
-    /// <response code="200">
-    ///   Indicates success and returns a user-friendly message
-    /// </response>
-    /// <response code="400">
-    ///   Indicates a data validation issue and will return a list of data validation errors
-    /// </response>
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status400BadRequest)]
+    [OpenApiOperation("CreateOrder", tags: new[] { "Shopping" }, Description = "Creates an Order that will be shipped to the Warehouse for fulfillment.")]
+    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(Order), Description = "The Order To Create")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "Indicates success and returns a user-friendly message")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: "application/json", bodyType: typeof(IEnumerable<string>), Description = "Indicates a data validation issue and will return a list of data validation errors")]
     [FunctionName("CreateOrder")]
-    [ApiExplorerSettings(GroupName = "Shopping")]
     public async Task<IActionResult> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "order")]
-        [RequestBodyType(typeof(Order), "The Order To Create")]
         HttpRequestMessage req,
         ILogger log)
     {
