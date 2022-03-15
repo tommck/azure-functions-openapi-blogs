@@ -1,4 +1,4 @@
-# # Creating Self Documenting Azure Functions with C# and OpenAPI: Update
+# Creating Self Documenting Azure Functions with C# and OpenAPI: Update
 
 In the _previous series of articles_, we went over how to create Self-Documenting Azure Functions with C# and OpenAPI with generated OpenAPI specs. At the time, this was done with the current LTS versions, which meant Azure Functions V3 and .NET 3.1.
 
